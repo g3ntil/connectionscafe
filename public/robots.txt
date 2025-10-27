@@ -1,0 +1,10 @@
+# Connections Café - Robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://connectionscafe.com/sitemap.xml
+
+# Crawl Delay
+Crawl-delay: 10
