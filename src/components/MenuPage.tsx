@@ -220,11 +220,12 @@ export function MenuPage() {
         console.log('Desktop scroll to:', scrollTarget);
       }
 
-      // Reset programmatic scroll flag after scroll animation
+      // Reset programmatic scroll flag after scroll animation (longer for mobile smooth scrolling)
+      const scrollDuration = isMobile ? 1500 : 1000;
       scrollTimeoutRef.current = setTimeout(() => {
         isScrollingProgrammatically.current = false;
         console.log('Programmatic scroll ended');
-      }, 1000);
+      }, scrollDuration);
     });
   };
 
@@ -234,19 +235,29 @@ export function MenuPage() {
   useEffect(() => {
     if (activeCategory === null) return;
     
-    // Scroll the active nav button into view
+    // Scroll the active nav button into view (horizontal scroll only)
     const isMobile = window.innerWidth < 1024;
     if (isMobile && mobileNavScrollRef.current) {
-      const activeButton = mobileNavScrollRef.current.querySelector(
-        `[data-category-id="${activeCategory}"]`
-      );
-      if (activeButton) {
-        activeButton.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center',
-        });
-      }
+      // Use requestAnimationFrame to avoid scroll conflicts
+      requestAnimationFrame(() => {
+        const activeButton = mobileNavScrollRef.current?.querySelector(
+          `[data-category-id="${activeCategory}"]`
+        ) as HTMLElement;
+        
+        if (activeButton && mobileNavScrollRef.current) {
+          // Manually scroll the horizontal nav to center the button
+          const navContainer = mobileNavScrollRef.current;
+          const buttonLeft = activeButton.offsetLeft;
+          const buttonWidth = activeButton.offsetWidth;
+          const containerWidth = navContainer.offsetWidth;
+          const scrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2);
+          
+          navContainer.scrollTo({
+            left: scrollLeft,
+            behavior: 'smooth',
+          });
+        }
+      });
     }
   }, [activeCategory]);
 
@@ -262,25 +273,27 @@ export function MenuPage() {
     const handleScroll = () => {
       // Don't update during programmatic scrolling
       if (isScrollingProgrammatically.current) {
+        console.log('Ignoring scroll during programmatic scroll');
         return;
       }
-      
-      // Mark that user is scrolling
-      lastUserScrollTime.current = Date.now();
       
       // Clear existing timer
       if (scrollTimer) {
         clearTimeout(scrollTimer);
       }
       
-      // Debounce the scroll handler
+      // Debounce the scroll handler with longer delay for mobile
       scrollTimer = setTimeout(() => {
         updateActiveCategory();
-      }, 100);
+      }, isMobile ? 150 : 100);
     };
     
     const updateActiveCategory = () => {
-      if (isScrollingProgrammatically.current) return;
+      // Double-check programmatic scrolling hasn't started
+      if (isScrollingProgrammatically.current) {
+        console.log('Skipping updateActiveCategory - programmatic scroll in progress');
+        return;
+      }
       
       const isMobile = window.innerWidth < 1024;
       let bestMatch: { id: number; distance: number } | null = null;
@@ -295,13 +308,14 @@ export function MenuPage() {
         
         if (isMobile) {
           // Mobile: account for header + sticky nav
-          targetY = 64 + 56 + 40; // header + nav + small offset
+          targetY = 64 + 56 + 20; // header + nav + smaller offset
           distance = Math.abs(rect.top - targetY);
           
-          // Check if element is in viewport
-          const inViewport = rect.top >= 0 && rect.top <= window.innerHeight;
+          // More lenient viewport check - category must have substantial presence
+          const categoryBottom = rect.bottom;
+          const isVisible = rect.top < window.innerHeight / 2 && categoryBottom > targetY;
           
-          if (inViewport && (!bestMatch || distance < bestMatch.distance)) {
+          if (isVisible && (!bestMatch || distance < bestMatch.distance)) {
             bestMatch = { id: category.id, distance };
           }
         } else {
@@ -323,33 +337,27 @@ export function MenuPage() {
         }
       });
       
-      if (bestMatch) {
-        setActiveCategory(bestMatch.id);
+      if (bestMatch && bestMatch.id !== activeCategory) {
         console.log('Auto-highlighted category:', bestMatch.id);
+        setActiveCategory(bestMatch.id);
       }
     };
     
     // Attach scroll listener
-    if (isMobile) {
-      window.addEventListener('scroll', handleScroll, { passive: true });
-    } else {
-      const container = desktopScrollContainerRef.current;
-      if (container) {
-        container.addEventListener('scroll', handleScroll, { passive: true });
-      }
+    const scrollContainer = isMobile ? window : desktopScrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
     }
     
     return () => {
       if (scrollTimer) {
         clearTimeout(scrollTimer);
       }
-      window.removeEventListener('scroll', handleScroll);
-      const container = desktopScrollContainerRef.current;
-      if (container) {
-        container.removeEventListener('scroll', handleScroll);
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [mainCategory, loading, currentMenuData]);
+  }, [mainCategory, loading, currentMenuData, activeCategory]);
 
   // ============================================================================
   // REVIEW BUTTON AUTO-EXPAND
