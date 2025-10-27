@@ -42,6 +42,9 @@ const iconMap: { [key: string]: any } = {
   PizzaIcon,
   Cookie,
   Baby,
+  Beef,
+  Drumstick,
+  Fish,
 };
 
 interface MenuItem {
