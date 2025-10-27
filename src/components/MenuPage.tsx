@@ -157,7 +157,7 @@ export function MenuPage() {
   };
 
   // ============================================================================
-  // NAVIGATION CLICK HANDLER (COMPLETELY REWRITTEN)
+  // NAVIGATION CLICK HANDLER
   // ============================================================================
   const handleCategoryClick = (categoryId: number) => {
     console.log('Category clicked:', categoryId);
@@ -291,29 +291,39 @@ export function MenuPage() {
         
         const rect = element.getBoundingClientRect();
         let targetY: number;
+        let distance: number;
         
         if (isMobile) {
           // Mobile: account for header + sticky nav
           targetY = 64 + 56 + 40; // header + nav + small offset
+          distance = Math.abs(rect.top - targetY);
+          
+          // Check if element is in viewport
+          const inViewport = rect.top >= 0 && rect.top <= window.innerHeight;
+          
+          if (inViewport && (!bestMatch || distance < bestMatch.distance)) {
+            bestMatch = { id: category.id, distance };
+          }
         } else {
-          // Desktop: target position in scrollable container
+          // Desktop: Calculate position relative to scroll container
           const container = desktopScrollContainerRef.current;
           if (!container) return;
+          
+          const containerRect = container.getBoundingClientRect();
+          const relativeTop = rect.top - containerRect.top;
           targetY = 150; // Target position from top of container
-        }
-        
-        // Calculate distance from target position
-        const distance = Math.abs(rect.top - targetY);
-        
-        // Check if element is in viewport
-        const inViewport = rect.top >= 0 && rect.top <= window.innerHeight;
-        
-        if (inViewport && (!bestMatch || distance < bestMatch.distance)) {
-          bestMatch = { id: category.id, distance };
+          distance = Math.abs(relativeTop - targetY);
+          
+          // Check if element is visible in the scroll container
+          const inViewport = relativeTop >= 0 && relativeTop <= containerRect.height;
+          
+          if (inViewport && (!bestMatch || distance < bestMatch.distance)) {
+            bestMatch = { id: category.id, distance };
+          }
         }
       });
       
-      if (bestMatch && bestMatch.id !== activeCategory) {
+      if (bestMatch) {
         setActiveCategory(bestMatch.id);
         console.log('Auto-highlighted category:', bestMatch.id);
       }
@@ -339,7 +349,7 @@ export function MenuPage() {
         container.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [mainCategory, loading, currentMenuData, activeCategory]);
+  }, [mainCategory, loading, currentMenuData]);
 
   // ============================================================================
   // REVIEW BUTTON AUTO-EXPAND
@@ -1014,7 +1024,7 @@ export function MenuPage() {
                       ease: "easeInOut"
                     }}
                   >
-                    <MessageCircle className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
+                    <MessageCircle className="w-4 h-4 lg:w-5 lg:h-5" />
                   </motion.div>
                 </motion.div>
               )}
