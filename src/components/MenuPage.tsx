@@ -18,9 +18,9 @@ import {
   Cookie, 
   Baby,
   MessageCircle,
-  beef,
-  drumstick,
-  fish
+  Beef,
+  Drumstick,
+  Fish
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import interiorTopView from 'figma:asset/7da2820ab6d94df8fcb9b546482f5019ce6f4a69.png';
