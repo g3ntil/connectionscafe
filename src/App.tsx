@@ -21,7 +21,6 @@ import {
   localBusinessSchema 
 } from './components/StructuredData';
 import logoImage from 'figma:asset/31fbf51d49bc0b31739ecb68e046e20c3d4faabe.png';
-import { initializeMenuData } from './utils/initializeMenuData';
 
 // SEO configuration for each page
 const seoConfig: Record<string, any> = {
@@ -158,25 +157,6 @@ function AppRoutes() {
     console.log('===================');
   }, [location]);
   
-  // Initialize menu data on first load
-  useEffect(() => {
-    const initMenu = async () => {
-      const initialized = localStorage.getItem('menuDataInitialized');
-      if (!initialized) {
-        try {
-          console.log('Initializing menu data in database...');
-          await initializeMenuData();
-          localStorage.setItem('menuDataInitialized', 'true');
-          console.log('Menu data initialization complete!');
-        } catch (error) {
-          console.error('Failed to initialize menu data:', error);
-        }
-      }
-    };
-    
-    initMenu();
-  }, []);
-
   // Set up essential meta tags and favicon
   useEffect(() => {
     // Set viewport meta tag

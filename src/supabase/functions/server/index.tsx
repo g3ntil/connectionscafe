@@ -132,42 +132,13 @@ app.get("/make-server-786b768a/menu/complete/:mainCategory", async (c) => {
   }
 });
 
-// Initialize menu data (one-time setup)
-app.post("/make-server-786b768a/menu/initialize", async (c) => {
-  try {
-    // This endpoint will initialize the menu data in the KV store
-    // It should be called once to populate the database
-    
-    const { menuData } = await c.req.json();
-    
-    if (!menuData || !menuData.mainCategory || !menuData.categories) {
-      return c.json({ error: "Invalid menu data format" }, 400);
-    }
-    
-    const { mainCategory, categories } = menuData;
-    
-    // Store each category and its items
-    for (const category of categories) {
-      const { items, ...categoryData } = category;
-      
-      // Store category
-      await kv.set(`menu:${mainCategory}:category:${category.id}`, categoryData);
-      
-      // Store items
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        await kv.set(
-          `menu:${mainCategory}:items:${category.id}:${i}`,
-          { ...item, order: i }
-        );
-      }
-    }
-    
-    return c.json({ success: true, message: "Menu data initialized successfully" });
-  } catch (error) {
-    console.log(`Error initializing menu: ${error}`);
-    return c.json({ error: `Failed to initialize menu: ${error}` }, 500);
-  }
+// Initialize menu data endpoint is intentionally disabled.
+// Menu data is edited directly in kv_store_786b768a and must never be overwritten.
+app.post("/make-server-786b768a/menu/initialize", (c) => {
+  return c.json({
+    success: false,
+    message: "Menu initialization is disabled. Manage menu data directly in kv_store_786b768a.",
+  }, 403);
 });
 
 // ============================================
